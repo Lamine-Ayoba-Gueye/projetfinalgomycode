@@ -9,6 +9,8 @@ import Reservation from './pages/Reservation';
 import Footer from './Components/Footer';
 import Invoice from './Components/invoice/invoice';
 import InvoicePdf from './Components/invoice';
+import User from './pages/User';
+import UserUpdate from './pages/UserUpdate';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
           <Router>
             <Routes>
               <Route path="/" element={<Engin />} />
+              <Route path="/user" element={<User />} />
+              <Route path="/userUpdate/:id" element={<UserUpdate />} />
               <Route path="/chauffeur" element={<Chauffeur />} />
               <Route path="/chauffeurUpdate/:id" element={<ChauffeurUpdate />} />
               <Route path="/reservation" element={<Reservation />} />

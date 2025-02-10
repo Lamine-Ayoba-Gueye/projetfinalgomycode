@@ -46,6 +46,12 @@ const Sidebar = () => {
                                             <p>Réservation</p>
                                         </a>
                                     </li>
+                                    <li className="nav-item">
+                                        <a href="/user" className="nav-link active">
+                                            <i className="nav-icon fas fa-user-circle" />
+                                            <p>Utilisateur</p>
+                                        </a>
+                                    </li>
                                 </ul>
                             </li>
                         </ul>
