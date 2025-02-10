@@ -54,7 +54,7 @@ const Reservation = () => {
         pdf.addImage(data, "PNG", 0, 0, pdfWidth, pdfHeight);
         pdf.save("reservation.pdf");
     };
-    // Facture
+    //--Facture
     const getEngines = async () => {
         try {
             const data = (await axios.get('/api/engin/getengins'));
@@ -110,13 +110,22 @@ const Reservation = () => {
             setTotaljour(newTotaljour);
         }
 
+        // if (chauffeurs && enginDetails) {
+        //     const chauffeur = chauffeurs.find(chauffeur => chauffeur._id === enginDetails.chauffeurid);
+        //     setChauffeurNom(chauffeur ? chauffeur.nom : 'Inconnu');
+        //     setmontantChauffeur(chauffeur ? Number(chauffeur.montant) : 0);
+        // }
+
+    }, [chauffeurs, enginDetails, montantenginDetails, montantChauffeur]);
+
+    useEffect(() => {
         if (chauffeurs && enginDetails) {
             const chauffeur = chauffeurs.find(chauffeur => chauffeur._id === enginDetails.chauffeurid);
+            console.log("Chauffeur correspondant:", chauffeur);
             setChauffeurNom(chauffeur ? chauffeur.nom : 'Inconnu');
             setmontantChauffeur(chauffeur ? Number(chauffeur.montant) : 0);
         }
-
-    }, [chauffeurs, enginDetails, montantenginDetails, montantChauffeur]);
+    }, [chauffeurs, enginDetails]);
 
     useEffect(() => {
         if (totaljour > 0 && montantenginDetails !== null) {
@@ -185,10 +194,11 @@ const Reservation = () => {
     return (
         <div>
             <div className="card-content">
-                <div className="card-header">
-                    <h4 className="card-title">Liste des Réservations</h4>
-                </div>
+
                 {id && (<>
+                    <div className="card-header">
+                        <h4 className="card-title">Faire une Réservation</h4>
+                    </div>
                     <div className="card-body">
                         <div className="card card-primary">
                             <div className="card-body">
@@ -212,7 +222,7 @@ const Reservation = () => {
                                         <div className="col-sm-3">
                                             <div className="form-group">
                                                 <label>Nom Acquéreur</label>
-                                                <input type="text" className="form-control" placeholder="nom" onChange={(e) => setAcquereur(e.target.value)} />
+                                                <input type="text" required className="form-control" placeholder="nom" onChange={(e) => setAcquereur(e.target.value)} />
                                             </div>
                                         </div>
                                     </div>
@@ -254,6 +264,9 @@ const Reservation = () => {
                     </div>
                 </>)}
                 {!id && (<>
+                    <div className="card-header">
+                        <h4 className="card-title">Liste des Réservations</h4>
+                    </div>
                     <div className="card">
                         <div className="card-body p-0">
                             <table className="table table-striped projects">

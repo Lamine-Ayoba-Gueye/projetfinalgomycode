@@ -170,7 +170,6 @@ const Engin = () => {
                                                     </p>
                                                 </>
                                             )}
-                                            <span className="badge badge-success"><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Succès</font></font></span>
 
                                         </div>
                                         {/* <div className="col-5 text-center">
@@ -178,14 +177,11 @@ const Engin = () => {
                                         </div> */}
                                     </div>
                                     <div className="text-right">
-
-                                        {/* <button className="btn btn-sm btn-primary" onClick={() => handleReservationClick(engin)} >
-                                            <i className="nav-icon fas fa-edit"></i><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Réserver</font></font>
-                                        </button> */}
-                                        {(fromdate && todate) && (
-                                            <Link to={`/reservation/${engin._id}?from=${fromdate}&to=${todate}`} className="btn btn-sm btn-primary">
+                                        {(fromdate && todate) && (<>
+                                            <Link to={`/reservation/${engin._id}?from=${fromdate}&to=${todate}`} className="btn btn-sm btn-success">
                                                 <i className="nav-icon fas fa-edit"></i><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Réserver</font></font>
-                                            </Link>)}
+                                            </Link>
+                                        </>)}
                                     </div>
                                 </div>
                             </div>
