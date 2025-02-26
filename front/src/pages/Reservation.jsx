@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import { DatePicker } from 'antd';
 import moment from 'moment';
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { useParams, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 const { RangePicker } = DatePicker;
-
 
 const Reservation = () => {
     const { id } = useParams();
@@ -15,9 +14,9 @@ const Reservation = () => {
     const queryParams = new URLSearchParams(location.search);
     const fromDate = queryParams.get('from');
     const toDate = queryParams.get('to');
-    const [acquereur, setAcquereur] = useState()
+    const [acquereur, setAcquereur] = useState();
     const [engins, setEngines] = useState([]);
-    const [chauffeurs, setChauffeurs] = useState();
+    const [chauffeurs, setChauffeurs] = useState([]);
     const [montantChauffeur, setmontantChauffeur] = useState(0);
     const [enginDetails, setEnginDetails] = useState(null);
     const [montantenginDetails, setMontantEnginDetails] = useState(null);
@@ -27,8 +26,79 @@ const Reservation = () => {
     const [reservations, setReservations] = useState([]);
     const [selectedReservation, setSelectedReservation] = useState(null);
     const navigate = useNavigate();
-    // Facture
     const printRef = React.useRef(null);
+
+    const getEngines = useCallback(async () => {
+        try {
+            const data = await axios.get('/api/engin/getengins');
+            setEngines(data.data);
+        } catch (error) {
+            console.error(error);
+        }
+    }, []);
+
+    const getchauffeurs = useCallback(async () => {
+        try {
+            const data = await axios.get('/api/chauffeur/getchauffeurs');
+            setChauffeurs(data.data);
+        } catch (error) {
+            console.log(error);
+        }
+    }, []);
+
+    const getEnginDetails = useCallback(async () => {
+        if (!id) {
+            console.warn("Aucun ID d'engin fourni.");
+            return; // Ne pas exécuter la requête si l'ID est manquant
+        }
+        try {
+            const data = await axios.get(`/api/engin/getengin/${id}`);
+            setEnginDetails(data.data);
+            setMontantEnginDetails(Number(data.data.montant));
+        } catch (error) {
+            console.error("Erreur lors de la récupération des détails de l'engin:", error);
+        }
+    }, [id]);
+
+    const getReservations = useCallback(async () => {
+        try {
+            const data = await axios.get('/api/reservation/getreservations');
+            setReservations(data.data);
+        } catch (error) {
+            console.error(error);
+        }
+    }, []);
+
+    useEffect(() => {
+        getEngines();
+        getchauffeurs();
+        getReservations();
+        if (id) { // Appeler getEnginDetails uniquement si `id` est présent
+            getEnginDetails();
+        }
+
+        if (fromDate && toDate) {
+            const debutjour = moment(fromDate, 'DD-MM-YYYY');
+            const finjour = moment(toDate, 'DD-MM-YYYY');
+            const newTotaljour = moment.duration(finjour.diff(debutjour)).asDays() + 1;
+            setTotaljour(newTotaljour);
+        }
+    }, [getEngines, getchauffeurs, getEnginDetails, getReservations, fromDate, toDate, id]);
+
+    useEffect(() => {
+        if (chauffeurs && enginDetails) {
+            const chauffeur = chauffeurs.find(chauffeur => chauffeur._id === enginDetails.chauffeurid);
+            setChauffeurNom(chauffeur ? chauffeur.nom : 'Inconnu');
+            setmontantChauffeur(chauffeur ? Number(chauffeur.montant) : 0);
+        }
+    }, [chauffeurs, enginDetails]);
+
+    useEffect(() => {
+        if (totaljour > 0 && montantenginDetails !== null) {
+            setTotalMontant((Number(montantenginDetails) + Number(montantChauffeur || 0)) * Number(totaljour));
+        }
+    }, [totaljour, montantenginDetails, montantChauffeur]);
+
     const handleDownloadPdf = async () => {
         const element = printRef.current;
         if (!element) {
@@ -48,90 +118,11 @@ const Reservation = () => {
 
         const imgProperties = pdf.getImageProperties(data);
         const pdfWidth = pdf.internal.pageSize.getWidth();
-
         const pdfHeight = (imgProperties.height * pdfWidth) / imgProperties.width;
 
         pdf.addImage(data, "PNG", 0, 0, pdfWidth, pdfHeight);
         pdf.save("reservation.pdf");
     };
-    //--Facture
-    const getEngines = async () => {
-        try {
-            const data = (await axios.get('/api/engin/getengins'));
-            setEngines(data.data);
-            // console.log(data.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-    const getchauffeurs = async () => {
-        const fetchData = async () => {
-            try {
-                const data = (await axios.get('/api/chauffeur/getchauffeurs'));
-                setChauffeurs(data.data);
-                // data.data.forEach(chauffeur => console.log('chauffeur id:', chauffeur._id));
-            } catch (error) {
-                console.log(error);
-            }
-        };
-        fetchData();
-    }
-    const getEnginDetails = async () => {
-        try {
-            const data = (await axios.get(`/api/engin/getengin/${id}`));
-            setEnginDetails(data.data);
-            setMontantEnginDetails(Number(data.data.montant));
-            // console.log(data.data.montant);
-
-        } catch (error) {
-            console.error(error);
-        }
-    };
-    const getReservations = async () => {
-        try {
-            const data = (await axios.get('/api/reservation/getreservations'));
-            setReservations(data.data);
-            // console.log(data.data);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    useEffect(() => {
-        getEngines();
-        getchauffeurs();
-        getEnginDetails();
-        getReservations();
-
-        if (fromDate && toDate) {
-            const debutjour = moment(fromDate, 'DD-MM-YYYY');
-            const finjour = moment(toDate, 'DD-MM-YYYY');
-            const newTotaljour = moment.duration(finjour.diff(debutjour)).asDays() + 1;
-            setTotaljour(newTotaljour);
-        }
-
-        // if (chauffeurs && enginDetails) {
-        //     const chauffeur = chauffeurs.find(chauffeur => chauffeur._id === enginDetails.chauffeurid);
-        //     setChauffeurNom(chauffeur ? chauffeur.nom : 'Inconnu');
-        //     setmontantChauffeur(chauffeur ? Number(chauffeur.montant) : 0);
-        // }
-
-    }, [chauffeurs, enginDetails, montantenginDetails, montantChauffeur]);
-
-    useEffect(() => {
-        if (chauffeurs && enginDetails) {
-            const chauffeur = chauffeurs.find(chauffeur => chauffeur._id === enginDetails.chauffeurid);
-            console.log("Chauffeur correspondant:", chauffeur);
-            setChauffeurNom(chauffeur ? chauffeur.nom : 'Inconnu');
-            setmontantChauffeur(chauffeur ? Number(chauffeur.montant) : 0);
-        }
-    }, [chauffeurs, enginDetails]);
-
-    useEffect(() => {
-        if (totaljour > 0 && montantenginDetails !== null) {
-            setTotalMontant((Number(montantenginDetails) + Number(montantChauffeur || 0)) * Number(totaljour));
-        }
-    }, [totaljour, montantenginDetails, montantChauffeur]);
 
     const handleSubmitReservation = async () => {
         try {
@@ -152,10 +143,10 @@ const Reservation = () => {
                 icon: "success",
                 confirmButtonText: "Fermer"
             }).then(() => {
+                navigate('/reservation');
+                setAcquereur('');
+                setEnginDetails(null);
             });
-            navigate('/reservation');
-            setAcquereur('');
-            setEnginDetails(null);
         } catch (error) {
             Swal.fire({
                 title: "Échec!",
@@ -165,7 +156,8 @@ const Reservation = () => {
             });
             console.error(error);
         }
-    }
+    };
+
     const handleDeleteReservation = async (id) => {
         try {
             const confirmDelete = await Swal.fire({
@@ -180,7 +172,7 @@ const Reservation = () => {
             if (!confirmDelete.value) {
                 return;
             }
-            const data = (await axios.delete(`/api/reservation/deletereservation/${id}`));
+            await axios.delete(`/api/reservation/deletereservation/${id}`);
             Swal.fire({
                 title: "Réservation supprimée avec succès!",
                 icon: "success",
@@ -276,11 +268,11 @@ const Reservation = () => {
                                             Nom Engin
                                         </font></font></th>
                                         {/* <th style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
-                                            Chauffeur
-                                        </font></font></th>
-                                        <th><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
-                                            Acquerreur
-                                        </font></font></th> */}
+                            Chauffeur
+                        </font></font></th>
+                        <th><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
+                            Acquerreur
+                        </font></font></th> */}
                                         <th style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
                                             Debut
                                         </font></font></th>
@@ -304,13 +296,13 @@ const Reservation = () => {
                                                 </font></font>
                                             </td>
                                             {/* <td>
-                                                <font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
-                                                    {reservation.chauffeur}
-                                                </font></font>
-                                            </td>
-                                            <td><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
-                                                {reservation.acquereur}
-                                            </font></font></td> */}
+                                <font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
+                                    {reservation.chauffeur}
+                                </font></font>
+                            </td>
+                            <td><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
+                                {reservation.acquereur}
+                            </font></font></td> */}
                                             <td><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>
                                                 {reservation.debut}
                                             </font></font></td>
@@ -387,11 +379,11 @@ const Reservation = () => {
                                                 </div>
                                             </div>
                                             {/* <div className="col-sm-6">
-                                                <div className="form-group">
-                                                    <label>Numéro Chauffeur</label>
-                                                    <h2 className="lead"><b>{selectedReservation.montantJour} fcfa</b></h2>
-                                                </div>
-                                            </div> */}
+                                <div className="form-group">
+                                    <label>Numéro Chauffeur</label>
+                                    <h2 className="lead"><b>{selectedReservation.montantJour} fcfa</b></h2>
+                                </div>
+                            </div> */}
                                         </div>
                                     </div>
                                 </div>
@@ -406,9 +398,8 @@ const Reservation = () => {
                     </div>
                 </div>
             </div>
-
         </div>
-    )
-}
+    );
+};
 
-export default Reservation
+export default Reservation;

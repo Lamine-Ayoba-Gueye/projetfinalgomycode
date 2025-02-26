@@ -191,6 +191,7 @@ const Engin = () => {
                 </div>
             </div>
 
+            {/* Modal Ajout Engin */}
             <div className="modal fade" id="modal-ajoutengin">
                 <div className="modal-dialog modal-lg">
                     <div className="modal-content">
@@ -264,7 +265,7 @@ const Engin = () => {
             </div>
 
             {/* Modal Reservation    tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"    */}
-            <div className="modal fade" id="modal-reservation">
+            {/* <div className="modal fade" id="modal-reservation">
                 <div className="modal-dialog modal-lg">
                     <div className="modal-content">
                         <div className="modal-header">
@@ -315,7 +316,7 @@ const Engin = () => {
                         </form>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
         </div>
     )

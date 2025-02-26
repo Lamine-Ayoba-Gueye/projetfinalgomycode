@@ -14,7 +14,7 @@ const User = () => {
         try {
             const data = (await axios.get('/api/user/getusers'));
             setUser(data.data);
-            // console.log(data.data);
+            console.log(data.data);
         } catch (error) {
             console.error(error);
         }
@@ -43,7 +43,7 @@ const User = () => {
         try {
             const data = (await axios.post('/api/user/register', user)).data;
             Swal.fire({
-                title: "Chauffeur ajouté avec succès!",
+                title: "Utilisateur ajouté avec succès!",
                 icon: "success",
             }).then(() => {
                 window.location.href = '/user';
