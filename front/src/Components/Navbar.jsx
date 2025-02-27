@@ -13,7 +13,7 @@ const Navbar = () => {
                 {/* Right navbar links */}
                 <ul className="navbar-nav ml-auto">
                     {/* Notifications Dropdown Menu */}
-                    <li className="nav-item dropdown">
+                    {/* <li className="nav-item dropdown">
                         <a className="nav-link" data-toggle="dropdown" href="#">
                             <i className="far fa-bell" />
                             <span className="badge badge-warning navbar-badge">15</span>
@@ -48,7 +48,7 @@ const Navbar = () => {
                         <a className="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="#" role="button">
                             <i className="fas fa-th-large" />
                         </a>
-                    </li>
+                    </li> */}
                 </ul>
             </nav>
             {/* /.navbar */}

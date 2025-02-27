@@ -18,9 +18,11 @@ const Engin = () => {
     const [chauffeurs, setChauffeurs] = useState();
     const [fromdate, setFromdate] = useState()
     const [todate, setTodate] = useState()
-    const [acquereur, setAcqureur] = useState()
+    const [selectedEnginId, setSelectedEnginId] = useState(null);
     const [selectedEngin, setSelectedEngin] = useState(null);
+    const [showModal, setShowModal] = useState(false);
     const [duplicateEngin, setDuplicateEngin] = useState([]);
+
     const navigate = useNavigate();
 
     const getEngines = async () => {
@@ -45,6 +47,7 @@ const Engin = () => {
         };
         fetchData();
     }
+
     useEffect(() => {
         getEngines();
         getchauffeurs();
@@ -59,14 +62,18 @@ const Engin = () => {
             formData.append('montant', montant);
             formData.append('chauffeurid', chauffeurid);
             formData.append('img', file);
-            await axios.post('/api/engin/engin', formData);
-            getEngines();
+            await axios.post('/api/engin/engin', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data', // Important pour l'envoi de fichiers
+                },
+            });
             setNom('');
             setNumero('');
             setPlaque('');
             setMontant('');
             setChauffeurid('1');
             setFile(null);
+            getEngines();
             Swal.fire({
                 title: "Succès!",
                 text: "L'engin a été ajouté avec succès.",
@@ -83,6 +90,70 @@ const Engin = () => {
                 confirmButtonText: "Fermer"
             }).then(() => {
                 window.location.reload();
+            });
+            console.error(error);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedEnginId) return;
+        try {
+            await axios.delete(`/api/engin/deleteEngin/${selectedEnginId}`);
+            Swal.fire({
+                title: "Succès!",
+                text: "L'engin a été supprimé avec succès.",
+                icon: "success",
+                confirmButtonText: "Fermer",
+            }).then(() => {
+                getEngines();
+                window.location.href = '/';
+            });
+        } catch (error) {
+            Swal.fire({
+                title: "Erreur!",
+                text: error.response?.data?.message || "Une erreur est survenue lors de la suppression de l'engin.",
+                icon: "error",
+                confirmButtonText: "Fermer",
+            });
+            console.error(error);
+        }
+    };
+
+    const handleSubmitEdit = async () => {
+        if (!selectedEnginId) return;
+        try {
+            const formData = new FormData();
+            formData.append('nom', nom);
+            formData.append('numero', numero);
+            formData.append('plaque', plaque);
+            formData.append('montant', montant);
+            formData.append('chauffeurid', chauffeurid);
+            if (file) {
+                formData.append('img', file);
+            }
+
+            const response = await axios.put(`/api/engin/updateEngin/${selectedEnginId}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            Swal.fire({
+                title: "Succès!",
+                text: "L'engin a été modifié avec succès.",
+                icon: "success",
+                confirmButtonText: "Fermer",
+            }).then(() => {
+                getEngines();
+                window.location.href = '/';
+            });
+
+        } catch (error) {
+            Swal.fire({
+                title: "Erreur!",
+                text: error.response?.data?.message || "Une erreur est survenue lors de la modification de l'engin.",
+                icon: "error",
+                confirmButtonText: "Fermer",
             });
             console.error(error);
         }
@@ -139,8 +210,6 @@ const Engin = () => {
         navigate('/reservation');
     }
 
-
-
     return (
         <div className='card mt-3'>
             <div className="card-header border-0">
@@ -172,14 +241,31 @@ const Engin = () => {
                                             )}
 
                                         </div>
-                                        {/* <div className="col-5 text-center">
+                                        <div className="col-5 text-center">
                                             <img src={`http://localhost:4000/public/images/${engin.img}`} alt="utilisateur-avatar" className="img-circle img-fluid" />
-                                        </div> */}
+                                        </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="row">
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm ml-2 btn-danger"
+                                            data-toggle="modal"
+                                            data-target="#modal-delete"
+                                            onClick={() => setSelectedEnginId(engin._id)} // Stocker l'ID de l'engin
+                                        >
+                                            <i className="far fa-trash-alt mr-1"></i> Supprimer
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm ml-2 btn-info mr-1"
+                                            data-toggle="modal"
+                                            data-target="#modal-update"
+                                            onClick={() => setSelectedEnginId(engin._id)} // Stocker l'ID de l'engin
+                                        ><i className="nav-icon fas fa-edit mr-1"></i> Modifier
+                                        </button>
                                         {(fromdate && todate) && (<>
-                                            <Link to={`/reservation/${engin._id}?from=${fromdate}&to=${todate}`} className="btn btn-sm btn-success">
-                                                <i className="nav-icon fas fa-edit"></i><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Réserver</font></font>
+                                            <Link to={`/reservation/${engin._id}?from=${fromdate}&to=${todate}`} className="btn btn-sm btn-success mt-2">
+                                                <i class="fas fa-check"></i><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Réserver</font></font>
                                             </Link>
                                         </>)}
                                     </div>
@@ -201,123 +287,226 @@ const Engin = () => {
                                 <span aria-hidden="true">×</span>
                             </button>
                         </div>
-                        <form>
+                        <form onSubmit={(e) => { e.preventDefault(); handleSubmitEngin(); }}>
                             <div className="modal-body">
                                 <div className="card card-primary">
                                     <div className="card-body">
                                         <div className="row">
                                             <div className="col-sm-6">
                                                 <div className="form-group">
-                                                    <label><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Nom Engin</font></font></label>
-                                                    <input required type="text" className="form-control" placeholder="nom engin" onChange={(e) => setNom(e.target.value)} />
+                                                    <label>Nom Engin</label>
+                                                    <input
+                                                        required
+                                                        type="text"
+                                                        className="form-control"
+                                                        placeholder="Nom engin"
+                                                        value={nom} // Contrôle la valeur du champ
+                                                        onChange={(e) => setNom(e.target.value)}
+                                                    />
                                                 </div>
                                             </div>
                                             <div className="col-sm-6">
                                                 <div className="form-group">
-                                                    <label><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Numéro Engin</font></font></label>
-                                                    <input required type="number" className="form-control" placeholder="7........." onChange={(e) => setNumero(e.target.value)} />
+                                                    <label>Numéro Engin</label>
+                                                    <input
+                                                        required
+                                                        type="number"
+                                                        className="form-control"
+                                                        placeholder="7........."
+                                                        value={numero} // Contrôle la valeur du champ
+                                                        onChange={(e) => setNumero(e.target.value)}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="row">
                                             <div className="col-sm-6">
                                                 <div className="form-group">
-                                                    <label><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Numéro Plaque</font></font></label>
-                                                    <input required type="text" className="form-control" onChange={(e) => setPlaque(e.target.value)} />
+                                                    <label>Numéro Plaque</label>
+                                                    <input
+                                                        required
+                                                        type="text"
+                                                        className="form-control"
+                                                        value={plaque} // Contrôle la valeur du champ
+                                                        onChange={(e) => setPlaque(e.target.value)}
+                                                    />
                                                 </div>
                                             </div>
                                             <div className="col-sm-6">
                                                 <div className="form-group">
-                                                    <label><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Montant Journaliére</font></font></label>
-                                                    <input required type="number" className="form-control" onChange={(e) => setMontant(e.target.value)} />
+                                                    <label>Montant Journalier</label>
+                                                    <input
+                                                        required
+                                                        type="number"
+                                                        className="form-control"
+                                                        value={montant} // Contrôle la valeur du champ
+                                                        onChange={(e) => setMontant(e.target.value)}
+                                                    />
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div className="row">
                                             <div className="col-sm-6">
                                                 <div className="form-group">
-                                                    <label><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Nom Chauffeur</font></font></label>
-                                                    <select required className="form-control" onChange={(e) => setChauffeurid(e.target.value)}>
+                                                    <label>Nom Chauffeur</label>
+                                                    <select
+                                                        required
+                                                        className="form-control"
+                                                        value={chauffeurid} // Contrôle la valeur du champ
+                                                        onChange={(e) => setChauffeurid(e.target.value)}
+                                                    >
                                                         <option value="" disabled>Sélectionnez un chauffeur</option>
                                                         {chauffeurs && chauffeurs.map((chauf) => (
-                                                            <option key={chauf.id} value={chauf._id}>{chauf.nom}</option>
-
+                                                            <option key={chauf._id} value={chauf._id}>
+                                                                {chauf.nom}
+                                                            </option>
                                                         ))}
                                                     </select>
                                                 </div>
                                             </div>
-                                            {/* <div className="col-sm-6">
+                                            <div className="col-sm-6">
                                                 <div className="form-group">
-                                                    <label><font style={{ verticalAlign: 'inherit' }}><font style={{ verticalAlign: 'inherit' }}>Image</font></font></label>
-                                                    <input type="file" className="form-control" onChange={(e) => setFile(e.target.files[0])} />
+                                                    <label>Image</label>
+                                                    <input
+                                                        type="file"
+                                                        className="form-control"
+                                                        onChange={(e) => setFile(e.target.files[0])}
+                                                    />
                                                 </div>
-                                            </div> */}
+                                            </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
                             <div className="modal-footer justify-content-between">
                                 <button type="button" className="btn btn-default" data-dismiss="modal">Fermer</button>
-                                <button type="button" className="btn btn-primary" onClick={handleSubmitEngin}>Ajouter</button>
+                                <button type="submit" className="btn btn-primary">Ajouter</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {/* Modal Update Engin */}
+            <div className="modal fade" id="modal-update" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title">Modifier l'engin</h5>
+                            <button
+                                type="button"
+                                className="close"
+                                data-dismiss="modal" aria-label="Close"
+                            >
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                        <form onSubmit={(e) => { e.preventDefault(); handleSubmitEdit(); }}>
+                            <div className="modal-body">
+                                <div className="form-group">
+                                    <label>Nom Engin</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={nom}
+                                        onChange={(e) => setNom(e.target.value)}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Numéro Engin</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={numero}
+                                        onChange={(e) => setNumero(e.target.value)}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Numéro Plaque</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        value={plaque}
+                                        onChange={(e) => setPlaque(e.target.value)}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Montant Journalier</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        value={montant}
+                                        onChange={(e) => setMontant(e.target.value)}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Chauffeur</label>
+                                    <select
+                                        className="form-control"
+                                        value={chauffeurid}
+                                        onChange={(e) => setChauffeurid(e.target.value)}
+                                    >
+                                        <option value="">Sélectionnez un chauffeur</option>
+                                        {chauffeurs && chauffeurs.map((chauffeur) => (
+                                            <option key={chauffeur._id} value={chauffeur._id}>
+                                                {chauffeur.nom}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label>Image</label>
+                                    <input
+                                        type="file"
+                                        className="form-control"
+                                        onChange={(e) => setFile(e.target.files[0])}
+                                    />
+                                </div>
+                            </div>
+                            <div className="modal-footer justify-content-between">
+                                <button type="button" className="btn btn-default" data-dismiss="modal">Fermer</button>
+                                <button type="submit" className="btn btn-primary">Modifier</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            {/* Modal Reservation    tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true"    */}
-            {/* <div className="modal fade" id="modal-reservation">
-                <div className="modal-dialog modal-lg">
+            {/* Modal Delete Engin */}
+            <div className="modal fade" id="modal-delete" tabIndex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h4 className="modal-title">Réservation</h4>
-                            <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">×</span>
+                            <h5 className="modal-title">Supprimer l'engin</h5>
+                            <button
+                                type="button"
+                                className="close"
+                                data-dismiss="modal" aria-label="Close"
+                            >
+                                <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
-                        <form>
-                            <div className="modal-body">
-                                <div className="card card-primary">
-                                    <div className="card-body">
-                                        <div className="row">
-                                            <div className="col-sm-6">
-                                                <div className="form-group">
-                                                    <label>Période</label><br />
-                                                    <RangePicker format="DD-MM-YYYY" onChange={selectdate} />
-                                                </div>
-                                            </div>
-                                            <div className="col-sm-6">
-                                                <div className="form-group">
-                                                    <label>Nom Acquéreur</label>
-                                                    <input type="text" className="form-control" placeholder="nom" onChange={(e) => setAcqureur(e.target.value)} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="row">
-                                            <div className="col-sm-6">
-                                                <div className="form-group">
-                                                    <label>Montant Journaliére</label>
-                                                    <h2 className="lead"><b>{selectedEngin?.montant} &nbsp; fcfa</b></h2>
-                                                </div>
-                                            </div>
-                                            <div className="col-sm-6">
-                                                <div className="form-group">
-                                                    <label>Montant Total</label>
-                                                    <h2 className="lead"><b>{selectedEngin?.montant}</b></h2>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="modal-footer justify-content-between">
-                                <button type="button" className="btn btn-default" data-dismiss="modal">Close</button>
-                                <button type="button" className="btn btn-primary" >Save changes</button>
-                            </div>
-                        </form>
+                        <div className="modal-body">
+                            <p>Êtes-vous sûr de vouloir supprimer cet engin ?</p>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                data-dismiss="modal" aria-label="Close"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-danger"
+                                onClick={handleDelete}
+                            >
+                                Supprimer
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div> */}
-
+            </div>
         </div>
     )
 }

@@ -11,6 +11,7 @@ import Invoice from './Components/invoice/invoice';
 import InvoicePdf from './Components/invoice';
 import User from './pages/User';
 import UserUpdate from './pages/UserUpdate';
+import { SignIn, SignUp } from '@clerk/clerk-react';
 
 function App() {
   return (
@@ -22,6 +23,8 @@ function App() {
         <div className="content">
           <Router>
             <Routes>
+              <Route path="/login" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
               <Route path="/" element={<Engin />} />
               <Route path="/user" element={<User />} />
               <Route path="/userUpdate/:id" element={<UserUpdate />} />
